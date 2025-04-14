@@ -40,7 +40,7 @@ ai_score = ai_df[ai_df['Row Labels'] == selected_region]
 jobs_filtered = jobs_df[jobs_df['Row Labels'] == selected_region]
 
 # Tabs for organized view
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Price Trends", "Rent Trends", "Vacancy + Inventory", "SEIFA + AI", "Score & Map"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Price Trends", "Rent Trends", "Vacancy + Inventory", "SEIFA + AI", "Score & Map", "Job Risk"])
 
 with tab1:
     if 'Price' in selected_metrics:
@@ -75,6 +75,7 @@ with tab4:
     st.subheader("🔍 Socioeconomic Indicators")
     st.metric("SEIFA Score", seifa_score['Average of Advantage Disadvantage Decile'].values[0] if not seifa_score.empty else "N/A")
     st.metric("AI Impact", ai_score['Sum of Total People Potentially  Impacted'].values[0] if not ai_score.empty else "N/A")
+    st.metric("Job Risk Score", jobs_filtered['Concentration Risk'].values[0] if not jobs_filtered.empty else "N/A")
     st.dataframe(jobs_filtered[['MAX', 'Concentration Risk']], use_container_width=True)
 
 with tab5:
@@ -97,3 +98,11 @@ with tab5:
         st.plotly_chart(fig_map, use_container_width=True)
     else:
         st.info("Latitude and Longitude data not available for this SA3.")
+
+with tab6:
+    st.subheader("💼 Job Risk Breakdown")
+    if not jobs_filtered.empty:
+        st.dataframe(jobs_filtered, use_container_width=True)
+        st.bar_chart(jobs_filtered.set_index('MAX')['Concentration Risk'])
+    else:
+        st.warning("No job risk data available for this region.")
