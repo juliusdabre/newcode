@@ -80,9 +80,9 @@ with tab5:
 
     st.subheader("📍 Map Preview (static)")
     loc = suburbs_df[suburbs_df['SA3'] == selected_region]
-    if not loc.empty:
+    if "Latitude" in loc.columns and "Longitude" in loc.columns:
         fig_map = px.scatter_mapbox(loc, lat="Latitude", lon="Longitude", zoom=6, height=400)
         fig_map.update_layout(mapbox_style="carto-positron")
         st.plotly_chart(fig_map, use_container_width=True)
     else:
-        st.info("No map location data available.")
+        st.info("Latitude and Longitude data not available for this SA3.")
