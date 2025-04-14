@@ -30,7 +30,26 @@ selected_months = st.sidebar.multiselect("Select Months to Compare", time_column
 metric_options = ['Price', 'Rent', 'Vacancy', 'Inventory', 'SEIFA Score', 'AI Impact', 'Job Risk']
 selected_metrics = st.sidebar.multiselect("Select Metrics to Display", metric_options, default=metric_options)
 
+# Additional filters
+st.sidebar.markdown("---")
+track_price_rise = st.sidebar.checkbox("🔼 Track Suburbs with Rising Prices")
+track_rent_rise = st.sidebar.checkbox("🔼 Track Suburbs with Rising Rents")
+
 # Filtered data
+# Apply price/rent rise logic to show alerts
+if track_price_rise:
+    price_trend = price_df[price_df['SA3'] == selected_region][time_columns[-3:]].values.flatten()
+    if len(price_trend) == 3 and price_trend[2] > price_trend[0]:
+        st.sidebar.success("📈 Price rising over last 3 months")
+    else:
+        st.sidebar.info("Price not rising in last 3 months")
+
+if track_rent_rise:
+    rent_trend = rent_df[rent_df['SA3'] == selected_region][time_columns[-3:]].values.flatten()
+    if len(rent_trend) == 3 and rent_trend[2] > rent_trend[0]:
+        st.sidebar.success("📈 Rent rising over last 3 months")
+    else:
+        st.sidebar.info("Rent not rising in last 3 months")
 price_filtered = price_df[price_df['SA3'] == selected_region]
 rent_filtered = rent_df[rent_df['SA3'] == selected_region]
 vacancy_filtered = vacancy_df[vacancy_df['SA3'] == selected_region]
