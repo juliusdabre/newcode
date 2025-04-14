@@ -42,13 +42,16 @@ if track_price_rise:
     for sa3 in regions:
         series = price_df[price_df['SA3'] == sa3][time_columns[-12:]].values.flatten()
         if len(series) >= 2 and series[-1] > series[0]:
-            rising_price_sa3s.append(sa3)
+            initial = series[0]
+            final = series[-1]
+            pct = ((final - initial) / initial) * 100 if initial else 0
+            rising_price_sa3s.append((sa3, round(pct, 2)))
     if selected_region in rising_price_sa3s:
         st.sidebar.success(f"📈 {selected_region} is experiencing a price rise over the last 12 months")
     else:
         st.sidebar.info(f"{selected_region} has no price rise in the last 12 months")
     with st.expander("📍 View All SA3s with Price Rise"):
-        st.write(sorted(rising_price_sa3s))
+        st.dataframe(pd.DataFrame(rising_price_sa3s, columns=["SA3", "% Price Increase"]).sort_values(by="% Price Increase", ascending=False), use_container_width=True)
 
         st.sidebar.info(f"{selected_region} has no price rise in the last 12 months")
 
@@ -57,13 +60,16 @@ if track_rent_rise:
     for sa3 in regions:
         series = rent_df[rent_df['SA3'] == sa3][time_columns[-12:]].values.flatten()
         if len(series) >= 2 and series[-1] > series[0]:
-            rising_rent_sa3s.append(sa3)
+            initial = series[0]
+            final = series[-1]
+            pct = ((final - initial) / initial) * 100 if initial else 0
+            rising_rent_sa3s.append((sa3, round(pct, 2)))
     if selected_region in rising_rent_sa3s:
         st.sidebar.success(f"📈 {selected_region} is experiencing a rent rise over the last 12 months")
     else:
         st.sidebar.info(f"{selected_region} has no rent rise in the last 12 months")
     with st.expander("📍 View All SA3s with Rent Rise"):
-        st.write(sorted(rising_rent_sa3s))
+        st.dataframe(pd.DataFrame(rising_rent_sa3s, columns=["SA3", "% Rent Increase"]).sort_values(by="% Rent Increase", ascending=False), use_container_width=True)
 
         st.sidebar.info(f"{selected_region} has no rent rise in the last 12 months")
 price_filtered = price_df[price_df['SA3'] == selected_region]
