@@ -77,13 +77,19 @@ with col2:
 
 # Map preview
 st.subheader("📍 Map Preview (static)")
-if 'Latitude' in suburbs_df.columns and 'Longitude' in suburbs_df.columns:
-    loc = suburbs_df[suburbs_df['SA3'] == selected_region]
-    fig_map = px.scatter_mapbox(loc, lat="Latitude", lon="Longitude", zoom=6)
-    fig_map.update_layout(mapbox_style="carto-positron")
-    st.plotly_chart(fig_map, use_container_width=True)
-else:
-    st.warning("Latitude and Longitude columns are missing in 'Suburbs Per SA3'. Map cannot be displayed.")
+try:
+    if {'Latitude', 'Longitude'}.issubset(suburbs_df.columns):
+        loc = suburbs_df[suburbs_df['SA3'] == selected_region]
+        if not loc.empty:
+            fig_map = px.scatter_mapbox(loc, lat="Latitude", lon="Longitude", zoom=6)
+            fig_map.update_layout(mapbox_style="carto-positron")
+            st.plotly_chart(fig_map, use_container_width=True)
+        else:
+            st.info("No coordinates found for selected SA3.")
+    else:
+        st.warning("Latitude/Longitude columns are missing in 'Suburbs Per SA3'.")
+except Exception as e:
+    st.error(f"Map rendering error: {e}")
 
 # Scores display
 st.subheader("📊 Growth Scores")
