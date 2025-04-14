@@ -36,20 +36,28 @@ track_price_rise = st.sidebar.checkbox("🔼 Track Suburbs with Rising Prices")
 track_rent_rise = st.sidebar.checkbox("🔼 Track Suburbs with Rising Rents")
 
 # Filtered data
-# Apply price/rent rise logic to show alerts
+# Apply price/rent rise logic to show alerts across all SA3s
 if track_price_rise:
-    price_history = price_df[price_df['SA3'] == selected_region][time_columns[-12:]].values.flatten()
-    if len(price_history) >= 2 and price_history[-1] > price_history[0]:
-        st.sidebar.success("📈 Price increased over the last 12 months")
+    rising_price_sa3s = []
+    for sa3 in regions:
+        series = price_df[price_df['SA3'] == sa3][time_columns[-12:]].values.flatten()
+        if len(series) >= 2 and series[-1] > series[0]:
+            rising_price_sa3s.append(sa3)
+    if selected_region in rising_price_sa3s:
+        st.sidebar.success(f"📈 {selected_region} is experiencing a price rise over the last 12 months")
     else:
-        st.sidebar.info("Price did not increase in the last 12 months")
+        st.sidebar.info(f"{selected_region} has no price rise in the last 12 months")
 
 if track_rent_rise:
-    rent_history = rent_df[rent_df['SA3'] == selected_region][time_columns[-12:]].values.flatten()
-    if len(rent_history) >= 2 and rent_history[-1] > rent_history[0]:
-        st.sidebar.success("📈 Rent increased over the last 12 months")
+    rising_rent_sa3s = []
+    for sa3 in regions:
+        series = rent_df[rent_df['SA3'] == sa3][time_columns[-12:]].values.flatten()
+        if len(series) >= 2 and series[-1] > series[0]:
+            rising_rent_sa3s.append(sa3)
+    if selected_region in rising_rent_sa3s:
+        st.sidebar.success(f"📈 {selected_region} is experiencing a rent rise over the last 12 months")
     else:
-        st.sidebar.info("Rent did not increase in the last 12 months")
+        st.sidebar.info(f"{selected_region} has no rent rise in the last 12 months")
 price_filtered = price_df[price_df['SA3'] == selected_region]
 rent_filtered = rent_df[rent_df['SA3'] == selected_region]
 vacancy_filtered = vacancy_df[vacancy_df['SA3'] == selected_region]
