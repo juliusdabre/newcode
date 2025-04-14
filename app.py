@@ -38,18 +38,18 @@ track_rent_rise = st.sidebar.checkbox("🔼 Track Suburbs with Rising Rents")
 # Filtered data
 # Apply price/rent rise logic to show alerts
 if track_price_rise:
-    price_trend = price_df[price_df['SA3'] == selected_region][time_columns[-3:]].values.flatten()
-    if len(price_trend) == 3 and price_trend[2] > price_trend[0]:
-        st.sidebar.success("📈 Price rising over last 3 months")
+    price_history = price_df[price_df['SA3'] == selected_region][time_columns[-12:]].values.flatten()
+    if len(price_history) >= 2 and price_history[-1] > price_history[0]:
+        st.sidebar.success("📈 Price increased over the last 12 months")
     else:
-        st.sidebar.info("Price not rising in last 3 months")
+        st.sidebar.info("Price did not increase in the last 12 months")
 
 if track_rent_rise:
-    rent_trend = rent_df[rent_df['SA3'] == selected_region][time_columns[-3:]].values.flatten()
-    if len(rent_trend) == 3 and rent_trend[2] > rent_trend[0]:
-        st.sidebar.success("📈 Rent rising over last 3 months")
+    rent_history = rent_df[rent_df['SA3'] == selected_region][time_columns[-12:]].values.flatten()
+    if len(rent_history) >= 2 and rent_history[-1] > rent_history[0]:
+        st.sidebar.success("📈 Rent increased over the last 12 months")
     else:
-        st.sidebar.info("Rent not rising in last 3 months")
+        st.sidebar.info("Rent did not increase in the last 12 months")
 price_filtered = price_df[price_df['SA3'] == selected_region]
 rent_filtered = rent_df[rent_df['SA3'] == selected_region]
 vacancy_filtered = vacancy_df[vacancy_df['SA3'] == selected_region]
