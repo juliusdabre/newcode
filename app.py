@@ -17,7 +17,7 @@ suburbs_df = pd.read_excel(file_path, sheet_name="Suburbs Per SA3")
 
 # Page setup
 st.set_page_config("Smart Property Investment Dashboard", layout="wide")
-st.title("Property Investment Dashboard")
+st.title("🏠 Smart Property Investment Dashboard")
 
 # Sidebar filters
 st.sidebar.header("🔍 Filter Options")
@@ -27,7 +27,7 @@ selected_region = st.sidebar.selectbox("Select SA3 Region", regions)
 time_columns = [col for col in price_df.columns if col not in ['SA3', 'SA4']]
 selected_months = st.sidebar.multiselect("Select Months to Compare", time_columns, default=time_columns[-6:])
 
-metric_options = ['Price', 'Rent', 'Vacancy', 'Inventory']
+metric_options = ['Price', 'Rent', 'Vacancy', 'Inventory', 'SEIFA Score', 'AI Impact', 'Job Risk']
 selected_metrics = st.sidebar.multiselect("Select Metrics to Display", metric_options, default=metric_options)
 
 # Filtered data
@@ -73,9 +73,12 @@ with tab3:
 
 with tab4:
     st.subheader("🔍 Socioeconomic Indicators")
-    st.metric("SEIFA Score", seifa_score['Average of Advantage Disadvantage Decile'].values[0] if not seifa_score.empty else "N/A")
-    st.metric("AI Impact", ai_score['Sum of Total People Potentially  Impacted'].values[0] if not ai_score.empty else "N/A")
-    st.metric("Job Risk Score", jobs_filtered['Concentration Risk'].values[0] if not jobs_filtered.empty else "N/A")
+    if 'SEIFA Score' in selected_metrics:
+        st.metric("SEIFA Score", seifa_score['Average of Advantage Disadvantage Decile'].values[0] if not seifa_score.empty else "N/A")
+    if 'AI Impact' in selected_metrics:
+        st.metric("AI Impact", ai_score['Sum of Total People Potentially  Impacted'].values[0] if not ai_score.empty else "N/A")
+    if 'Job Risk' in selected_metrics:
+        st.metric("Job Risk Score", jobs_filtered['Concentration Risk'].values[0] if not jobs_filtered.empty else "N/A")
     st.dataframe(jobs_filtered[['MAX', 'Concentration Risk']], use_container_width=True)
 
 with tab5:
