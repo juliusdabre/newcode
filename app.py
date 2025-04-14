@@ -17,7 +17,7 @@ suburbs_df = pd.read_excel(file_path, sheet_name="Suburbs Per SA3")
 
 # Page setup
 st.set_page_config("Smart Property Investment Dashboard", layout="wide")
-st.title("🏠 Smart Property Investment Dashboard")
+st.title("Property Investment Dashboard")
 
 # Sidebar filters
 st.sidebar.header("🔍 Filter Options")
