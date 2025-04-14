@@ -51,6 +51,7 @@ if track_price_rise:
     else:
         st.sidebar.info(f"{selected_region} has no price rise in the last 12 months")
     with st.expander("📍 View All SA3s with Price Rise"):
+        st.download_button("⬇️ Download Price Rise Data", data=pd.DataFrame(rising_price_sa3s, columns=["SA3", "% Price Increase"]).to_csv(index=False), file_name="price_rise_sa3s.csv")
         st.dataframe(pd.DataFrame(rising_price_sa3s, columns=["SA3", "% Price Increase"]).sort_values(by="% Price Increase", ascending=False), use_container_width=True)
 
         st.sidebar.info(f"{selected_region} has no price rise in the last 12 months")
@@ -69,6 +70,7 @@ if track_rent_rise:
     else:
         st.sidebar.info(f"{selected_region} has no rent rise in the last 12 months")
     with st.expander("📍 View All SA3s with Rent Rise"):
+        st.download_button("⬇️ Download Rent Rise Data", data=pd.DataFrame(rising_rent_sa3s, columns=["SA3", "% Rent Increase"]).to_csv(index=False), file_name="rent_rise_sa3s.csv")
         st.dataframe(pd.DataFrame(rising_rent_sa3s, columns=["SA3", "% Rent Increase"]).sort_values(by="% Rent Increase", ascending=False), use_container_width=True)
 
         st.sidebar.info(f"{selected_region} has no rent rise in the last 12 months")
@@ -147,6 +149,16 @@ with tab6:
     st.subheader("💼 Job Risk Breakdown")
     if not jobs_filtered.empty:
         st.dataframe(jobs_filtered, use_container_width=True)
-        st.bar_chart(jobs_filtered.set_index('MAX')['Concentration Risk'])
+
+        st.subheader("🧮 Summary Metrics")
+        st.metric("Average Concentration Risk", round(jobs_filtered['Concentration Risk'].mean(), 2))
+        st.metric("Highest Risk Category", jobs_filtered.loc[jobs_filtered['Concentration Risk'].idxmax(), 'MAX'])
+        st.metric("Lowest Risk Category", jobs_filtered.loc[jobs_filtered['Concentration Risk'].idxmin(), 'MAX'])
+
+        st.subheader("📊 Job Category Risk Chart")
+        fig_jobs = px.bar(jobs_filtered, x='MAX', y='Concentration Risk', title="Job Category Risk", labels={'MAX': 'Job Category', 'Concentration Risk': 'Risk Level'})
+        fig_jobs.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig_jobs, use_container_width=True)
     else:
+        st.warning("No job risk data available for this region.")
         st.warning("No job risk data available for this region.")
