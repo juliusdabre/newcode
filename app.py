@@ -36,7 +36,7 @@ track_price_rise = st.sidebar.checkbox("🔼 Track Suburbs with Rising Prices")
 track_rent_rise = st.sidebar.checkbox("🔼 Track Suburbs with Rising Rents")
 
 # Filtered data
-# Apply price/rent rise logic to show alerts across all SA3s
+# Apply price/rent rise logic to show alerts across all SA3s and display lists
 if track_price_rise:
     rising_price_sa3s = []
     for sa3 in regions:
@@ -46,6 +46,10 @@ if track_price_rise:
     if selected_region in rising_price_sa3s:
         st.sidebar.success(f"📈 {selected_region} is experiencing a price rise over the last 12 months")
     else:
+        st.sidebar.info(f"{selected_region} has no price rise in the last 12 months")
+    with st.expander("📍 View All SA3s with Price Rise"):
+        st.write(sorted(rising_price_sa3s))
+
         st.sidebar.info(f"{selected_region} has no price rise in the last 12 months")
 
 if track_rent_rise:
@@ -57,6 +61,10 @@ if track_rent_rise:
     if selected_region in rising_rent_sa3s:
         st.sidebar.success(f"📈 {selected_region} is experiencing a rent rise over the last 12 months")
     else:
+        st.sidebar.info(f"{selected_region} has no rent rise in the last 12 months")
+    with st.expander("📍 View All SA3s with Rent Rise"):
+        st.write(sorted(rising_rent_sa3s))
+
         st.sidebar.info(f"{selected_region} has no rent rise in the last 12 months")
 price_filtered = price_df[price_df['SA3'] == selected_region]
 rent_filtered = rent_df[rent_df['SA3'] == selected_region]
