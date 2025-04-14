@@ -19,9 +19,16 @@ suburbs_df = pd.read_excel(file_path, sheet_name="Suburbs Per SA3")
 st.set_page_config("Smart Property Investment Dashboard", layout="wide")
 st.title("🏠 Smart Property Investment Dashboard")
 
-# Sidebar filter
+# Sidebar filters
+st.sidebar.header("🔍 Filter Options")
 regions = sorted(price_df['SA3'].dropna().unique())
 selected_region = st.sidebar.selectbox("Select SA3 Region", regions)
+
+time_columns = [col for col in price_df.columns if col not in ['SA3', 'SA4']]
+selected_months = st.sidebar.multiselect("Select Months to Compare", time_columns, default=time_columns[-6:])
+
+metric_options = ['Price', 'Rent', 'Vacancy', 'Inventory']
+selected_metrics = st.sidebar.multiselect("Select Metrics to Display", metric_options, default=metric_options)
 
 # Filtered data
 price_filtered = price_df[price_df['SA3'] == selected_region]
@@ -36,29 +43,33 @@ jobs_filtered = jobs_df[jobs_df['Row Labels'] == selected_region]
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["Price Trends", "Rent Trends", "Vacancy + Inventory", "SEIFA + AI", "Score & Map"])
 
 with tab1:
-    st.subheader("📈 Median House Price")
-    melt_price = price_filtered.melt(id_vars='SA3', var_name='Month', value_name='Price')
-    fig_price = px.line(melt_price, x='Month', y='Price', title="House Price Trend")
-    st.plotly_chart(fig_price, use_container_width=True)
+    if 'Price' in selected_metrics:
+        st.subheader("📈 Median House Price")
+        melt_price = price_filtered.melt(id_vars='SA3', value_vars=selected_months, var_name='Month', value_name='Price')
+        fig_price = px.line(melt_price, x='Month', y='Price', title="House Price Trend")
+        st.plotly_chart(fig_price, use_container_width=True)
 
 with tab2:
-    st.subheader("💰 Median Weekly Rent")
-    melt_rent = rent_filtered.melt(id_vars='SA3', var_name='Month', value_name='Rent')
-    fig_rent = px.line(melt_rent, x='Month', y='Rent', title="House Rent Trend")
-    st.plotly_chart(fig_rent, use_container_width=True)
+    if 'Rent' in selected_metrics:
+        st.subheader("💰 Median Weekly Rent")
+        melt_rent = rent_filtered.melt(id_vars='SA3', value_vars=selected_months, var_name='Month', value_name='Rent')
+        fig_rent = px.line(melt_rent, x='Month', y='Rent', title="House Rent Trend")
+        st.plotly_chart(fig_rent, use_container_width=True)
 
 with tab3:
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("📉 Vacancy Rates")
-        melt_vac = vacancy_filtered.melt(id_vars='SA3', var_name='Month', value_name='Vacancy Rate')
-        fig_vac = px.line(melt_vac, x='Month', y='Vacancy Rate')
-        st.plotly_chart(fig_vac, use_container_width=True)
+        if 'Vacancy' in selected_metrics:
+            st.subheader("📉 Vacancy Rates")
+            melt_vac = vacancy_filtered.melt(id_vars='SA3', value_vars=selected_months, var_name='Month', value_name='Vacancy Rate')
+            fig_vac = px.line(melt_vac, x='Month', y='Vacancy Rate')
+            st.plotly_chart(fig_vac, use_container_width=True)
     with col2:
-        st.subheader("🏘 Inventory Levels")
-        melt_inv = inventory_filtered.melt(id_vars='SA3', var_name='Month', value_name='Inventory')
-        fig_inv = px.line(melt_inv, x='Month', y='Inventory')
-        st.plotly_chart(fig_inv, use_container_width=True)
+        if 'Inventory' in selected_metrics:
+            st.subheader("🏘 Inventory Levels")
+            melt_inv = inventory_filtered.melt(id_vars='SA3', value_vars=selected_months, var_name='Month', value_name='Inventory')
+            fig_inv = px.line(melt_inv, x='Month', y='Inventory')
+            st.plotly_chart(fig_inv, use_container_width=True)
 
 with tab4:
     st.subheader("🔍 Socioeconomic Indicators")
