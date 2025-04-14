@@ -1,119 +1,99 @@
-import streamlit as st
+import zipfile
+import os
+
+# Define file paths
+app_file_path = "/mnt/data/app.py"
+csv_file_path = "/mnt/data/sa3_clean.csv"
+excel_file_path = "/mnt/data/Suburb Excel and Radar January 2025.xlsx"
+zip_path = "/mnt/data/smart_property_app_bundle.zip"
+
+# Write the app content to app.py
+app_code = '''import streamlit as st
 import pandas as pd
 import plotly.express as px
-from sklearn.preprocessing import MinMaxScaler
-from fpdf import FPDF
-import base64
-import io
+import plotly.graph_objects as go
 
-# Page setup
-st.set_page_config("Smart Property Investment Dashboard", layout="wide")
-st.title("📊 Smart Property Investment Dashboard")
+# Load cleaned SA3 and Suburb data
+sa3_df = pd.read_csv("sa3_clean.csv")
+suburb_df = pd.read_excel("Suburb Excel and Radar January 2025.xlsx", sheet_name="Suburb", header=6)
+suburb_df = suburb_df.dropna(axis=1, how='all')
+suburb_df = suburb_df.dropna(subset=[suburb_df.columns[0]])
+suburb_df = suburb_df.reset_index(drop=True)
 
-# Load data
-file_path = "Region Charts Master.xlsx"
-price_df = pd.read_excel(file_path, sheet_name="House Price Sa3")
-rent_df = pd.read_excel(file_path, sheet_name="House Rents")
-seifa_df = pd.read_excel(file_path, sheet_name="Average SEIFA")
-jobs_df = pd.read_excel(file_path, sheet_name="Jobs By Category")
-suburbs_df = pd.read_excel(file_path, sheet_name="Suburbs Per SA3")
-
-# Clean and prepare data
-price_df = price_df.dropna(subset=["SA3"])
-rent_df = rent_df.dropna(subset=["SA3"])
-seifa_df = seifa_df.dropna(subset=["SA3"])
-jobs_df = jobs_df.dropna(subset=["SA3"])
-
-# Use the last 6 months for trends
-price_cols = price_df.columns[-6:]
-rent_cols = rent_df.columns[-6:]
-
-# Merge data
-merged = price_df[["SA3"] + list(price_cols)].merge(
-    rent_df[["SA3"] + list(rent_cols)], on="SA3", suffixes=('_price', '_rent')
-).merge(
-    seifa_df[["SA3", "Average SEIFA"]], on="SA3"
-).merge(
-    jobs_df.groupby("SA3").sum().reset_index(), on="SA3"
-)
-
-# Compute scores
-merged["price_growth"] = merged[price_cols].pct_change(axis=1).mean(axis=1)
-merged["rent_growth"] = merged[rent_cols].pct_change(axis=1).mean(axis=1)
-merged["job_diversity"] = jobs_df.drop(columns=["SA3"]).count(axis=1)
-
-scaler = MinMaxScaler()
-merged[["price_score", "rent_score", "seifa_score", "job_score"]] = scaler.fit_transform(
-    merged[["price_growth", "rent_growth", "Average SEIFA", "job_diversity"]]
-)
-
-merged["total_score"] = merged[["price_score", "rent_score", "seifa_score", "job_score"]].sum(axis=1)
+st.set_page_config("Smart Property Investment Tool", layout="wide")
+st.title("🏠 Smart Property Investment Tool")
 
 # Sidebar filters
-sa3_options = merged.sort_values("total_score", ascending=False)["SA3"].unique()
-seifa_min = int(merged["Average SEIFA"].min())
-seifa_max = int(merged["Average SEIFA"].max())
+with st.sidebar:
+    st.header("Filter by SA3 Metrics")
+    growth_gap = st.slider("Growth Gap", 1, 5, (1, 5))
+    price_change = st.slider("12M Price Change", 1, 5, (1, 5))
+    yield_range = st.slider("Rental Yield %", 0.0, 10.0, (3.0, 7.0))
+    afford_buy = st.slider("Buy Affordability (Score)", 1, 5, (1, 5))
+    afford_rent = st.slider("Rent Affordability (Score)", 0.0, 1.0, (0.2, 0.6))
 
-selected_region = st.sidebar.selectbox("Select SA3 Region", sa3_options)
-seifa_filter = st.sidebar.slider("Filter by SEIFA Score Range", seifa_min, seifa_max, (seifa_min, seifa_max))
+# Apply filters
+filtered_df = sa3_df[
+    (sa3_df['Growth Gap'].between(*growth_gap)) &
+    (sa3_df['12M Price Change'].between(*price_change)) &
+    (sa3_df['YIELD'].between(*yield_range)) &
+    (sa3_df['Buy Affordability'].between(*afford_buy)) &
+    (sa3_df['Rent Afford'].between(*afford_rent))
+]
 
-# Apply SEIFA filter
-merged_filtered = merged[(merged["Average SEIFA"] >= seifa_filter[0]) & (merged["Average SEIFA"] <= seifa_filter[1])]
-selected_data = merged_filtered[merged_filtered["SA3"] == selected_region]
+st.subheader("Filtered SA3 Regions")
+st.dataframe(filtered_df[['SA3', 'Median', 'Growth Gap', '12M Price Change', 'YIELD', 'Radar Index']].sort_values(by='Radar Index', ascending=False))
 
-# Show charts
-st.subheader(f"📈 Trends and Scores for {selected_region}")
-col1, col2 = st.columns(2)
+# Radar chart comparison
+st.subheader("📊 SA3 Radar Chart Comparison")
+selected_sa3s = st.multiselect("Select SA3s to Compare", options=filtered_df['SA3'].unique())
 
-with col1:
-    st.markdown("#### Price Trend")
-    fig_price = px.line(price_df[price_df["SA3"] == selected_region].T[2:], title="Price Trend")
-    st.plotly_chart(fig_price, use_container_width=True)
+if selected_sa3s:
+    radar_data = filtered_df[filtered_df['SA3'].isin(selected_sa3s)]
+    categories = ['Growth Gap', '12M Price Change', 'YIELD', 'Buy Affordability', 'Rent Afford']
 
-with col2:
-    st.markdown("#### Rent Trend")
-    fig_rent = px.line(rent_df[rent_df["SA3"] == selected_region].T[2:], title="Rent Trend")
-    st.plotly_chart(fig_rent, use_container_width=True)
+    fig = go.Figure()
+    for _, row in radar_data.iterrows():
+        fig.add_trace(go.Scatterpolar(
+            r=[row[cat] for cat in categories],
+            theta=categories,
+            fill='toself',
+            name=row['SA3']
+        ))
 
-# Map preview
-st.subheader("📍 Map Preview (static)")
-try:
-    if {'Latitude', 'Longitude'}.issubset(suburbs_df.columns):
-        loc = suburbs_df[suburbs_df['SA3'] == selected_region]
-        if not loc.empty:
-            fig_map = px.scatter_mapbox(loc, lat="Latitude", lon="Longitude", zoom=6)
-            fig_map.update_layout(mapbox_style="carto-positron")
-            st.plotly_chart(fig_map, use_container_width=True)
-        else:
-            st.info("No coordinates found for selected SA3.")
-    else:
-        st.warning("Latitude/Longitude columns are missing in 'Suburbs Per SA3'.")
-except Exception as e:
-    st.error(f"Map rendering error: {e}")
+    fig.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 10])),
+        showlegend=True
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
-# Scores display
-st.subheader("📊 Growth Scores")
-st.dataframe(selected_data[["SA3", "price_score", "rent_score", "seifa_score", "job_score", "total_score"]].round(3))
+# Suburb insights
+st.subheader("🏘️ Suburb Investment Insights")
+selected_suburb = st.selectbox("Select a Suburb", suburb_df['Location'].unique())
 
-# Top 20 Ranking
-st.subheader("🏆 Top 20 SA3s Predicted to Grow")
-st.dataframe(merged_filtered.sort_values("total_score", ascending=False)[["SA3", "total_score"]].head(20))
+if selected_suburb:
+    sub_data = suburb_df[suburb_df['Location'] == selected_suburb].iloc[0]
+    st.markdown(f"**Nearest SA2:** {sub_data['Unnamed: 4']}")
+    st.markdown(f"**SA3:** {sub_data['Unnamed: 5']} | **Region:** {sub_data['Unnamed: 6']}")
+    st.markdown(f"**Property Type:** {sub_data['Suburb Metrics Estimates']}")
 
-# Export PDF function
-def generate_pdf(sa3, data):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt=f"Growth Summary Report: {sa3}", ln=True, align='C')
-    pdf.ln(10)
-    for col in ["price_score", "rent_score", "seifa_score", "job_score", "total_score"]:
-        score = data[col].values[0]
-        pdf.cell(200, 10, txt=f"{col.replace('_', ' ').capitalize()}: {score:.3f}", ln=True)
-    return pdf.output(dest='S').encode('latin1')
+    st.metric("Investor Score", int(sub_data['Investor Score (Out Of 100)']))
+    st.metric("Growth Gap Index", int(sub_data['Growth Gap Index']))
+    st.metric("Yield Score", int(sub_data['Yield Score']))
+    st.metric("Buy Affordability", int(sub_data['Buy Affordability Score']))
+    st.metric("Rent Affordability", int(sub_data['Rent Affordability Score']))
 
-# Download button
-if st.button("📄 Download SA3 Report as PDF"):
-    pdf_bytes = generate_pdf(selected_region, selected_data)
-    b64 = base64.b64encode(pdf_bytes).decode()
-    href = f'<a href="data:application/octet-stream;base64,{b64}" download="{selected_region}_report.pdf">Click here to download your PDF</a>'
-    st.markdown(href, unsafe_allow_html=True)
+st.markdown("---")
+st.caption("Built with ❤️ by Propwealth")
+'''
+
+with open(app_file_path, "w") as f:
+    f.write(app_code)
+
+# Create a ZIP bundle
+with zipfile.ZipFile(zip_path, "w") as bundle:
+    bundle.write(app_file_path, arcname="app.py")
+    bundle.write(csv_file_path, arcname="sa3_clean.csv")
+    bundle.write(excel_file_path, arcname="Suburb Excel and Radar January 2025.xlsx")
+
+zip_path
