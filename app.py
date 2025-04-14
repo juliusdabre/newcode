@@ -21,6 +21,10 @@ st.title("🏠 Smart Property Investment Dashboard")
 
 # Sidebar filters
 st.sidebar.header("🔍 Filter Options")
+
+# Job category filter (if available)
+job_categories = jobs_df['MAX'].dropna().unique()
+selected_job_category = st.sidebar.selectbox("Select Job Category (Optional)", ['All'] + sorted(job_categories))
 regions = sorted(price_df['SA3'].dropna().unique())
 selected_region = st.sidebar.selectbox("Select SA3 Region", regions)
 
@@ -81,6 +85,8 @@ inventory_filtered = inventory_df[inventory_df['SA3'] == selected_region]
 seifa_score = seifa_df[seifa_df['Row Labels'] == selected_region]
 ai_score = ai_df[ai_df['Row Labels'] == selected_region]
 jobs_filtered = jobs_df[jobs_df['Row Labels'] == selected_region]
+if selected_job_category != 'All':
+    jobs_filtered = jobs_filtered[jobs_filtered['MAX'] == selected_job_category]
 
 # Tabs for organized view
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Price Trends", "Rent Trends", "Vacancy + Inventory", "SEIFA + AI", "Score & Map", "Job Risk"])
